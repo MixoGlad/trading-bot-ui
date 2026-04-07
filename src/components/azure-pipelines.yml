@@ -1,4 +1,4 @@
-# Single-stage Azure Pipeline for GKE deployment
+# Single-stage Azure Pipeline for GKE deployment (GCR-Only)
 trigger:
   branches:
     include:
@@ -24,19 +24,21 @@ jobs:
   steps:
   - checkout: self
   
-  # Login to Docker Hub (fixes 401 error)
-  - task: Docker@2
-    displayName: 'Login to Docker Hub'
+  # Setup Node.js
+  - task: NodeTool@0
     inputs:
-      command: login
-      containerRegistry: 'Docker'
+      versionSpec: '20.x'
   
-  # Login to GCR
-  - task: Docker@2
-    displayName: 'Login to GCR'
-    inputs:
-      command: login
-      containerRegistry: 'zero-day-brokers-dev'
+  - script: npm install && npm run lint || true
+    displayName: 'Install dependencies'
+  
+  # Authenticate to GCP and GCR
+  - script: |
+      echo $(GCP_SA_KEY) | gcloud auth activate-service-account --key-file=-
+      gcloud auth configure-docker gcr.io
+    displayName: 'Authenticate to GCP'
+    env:
+      GCP_SA_KEY: $(GCP_SA_KEY_SECRET)
   
   # Build and push backend
   - task: Docker@2
@@ -65,12 +67,10 @@ jobs:
     displayName: 'Install kubectl'
   
   - script: |
-      echo $(GCP_SA_KEY) | gcloud auth activate-service-account --key-file=-
       gcloud container clusters get-credentials $(GKE_CLUSTER) --zone $(GKE_ZONE)
+      kubectl create namespace $(NAMESPACE) --dry-run=client -o yaml | kubectl apply -f -
       kubectl set image deployment/trading-bot-backend backend=$(REGISTRY)/$(GCP_PROJECT_ID)/$(BACKEND_IMAGE):$(IMAGE_TAG) --namespace $(NAMESPACE)
       kubectl set image deployment/trading-bot-frontend frontend=$(REGISTRY)/$(GCP_PROJECT_ID)/$(FRONTEND_IMAGE):$(IMAGE_TAG) --namespace $(NAMESPACE)
       kubectl rollout status deployment/trading-bot-backend --namespace $(NAMESPACE)
       kubectl rollout status deployment/trading-bot-frontend --namespace $(NAMESPACE)
     displayName: 'Deploy to GKE'
-    env:
-      GCP_SA_KEY: $(GCP_SA_KEY_SECRET)
