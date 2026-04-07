@@ -20,7 +20,7 @@ variables:
   # K8s Config
   k8sNamespace: 'default'
   imagePullSecret: 'acr-auth-secret'
-  vmImageName: 'ubuntu-latest'
+  vmImageName: 'default'
 
 stages:
 - stage: Build
