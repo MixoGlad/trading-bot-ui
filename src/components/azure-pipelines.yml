@@ -19,7 +19,7 @@ jobs:
 - job: BuildAndDeploy
   displayName: 'Build, Push, and Deploy'
   pool:
-    vmImage: 'ubuntu-latest'
+    name: 'Default'
   
   steps:
   - checkout: self
@@ -32,13 +32,13 @@ jobs:
   - script: npm install && npm run lint || true
     displayName: 'Install dependencies'
   
-  # Authenticate to GCP and GCR
-  - script: |
-      echo $(GCP_SA_KEY) | gcloud auth activate-service-account --key-file=-
-      gcloud auth configure-docker gcr.io
-    displayName: 'Authenticate to GCP'
-    env:
-      GCP_SA_KEY: $(GCP_SA_KEY_SECRET)
+  # # Authenticate to GCP and GCR
+  # - script: |
+  #     echo $(GCP_SA_KEY) | gcloud auth activate-service-account --key-file=-
+  #     gcloud auth configure-docker gcr.io
+  #   displayName: 'Authenticate to GCP'
+  #   env:
+  #     GCP_SA_KEY: $(GCP_SA_KEY_SECRET)
   
   # Build and push backend
   - task: Docker@2
