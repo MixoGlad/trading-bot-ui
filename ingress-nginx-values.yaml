@@ -1,0 +1,17 @@
+controller:
+  service:
+    # If you reserved a regional static IP in GCP, uncomment and add it here:
+    loadBalancerIP: "PASTE_YOUR_RESERVED_STATIC_IP_HERE"
+    externalTrafficPolicy: "Local"
+  config:
+    # These settings help with WebSocket stability
+    proxy-read-timeout: "3600"
+    proxy-send-timeout: "3600"
+  rbac:
+    create: true
+  publishService:
+    enabled: true
+  metrics:
+    enabled: true
+    serviceMonitor:
+      enabled: false # Set to true if using Prometheus Operator

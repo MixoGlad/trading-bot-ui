@@ -1,0 +1,111 @@
+trigger:
+- main
+
+resources:
+- repo: self
+
+variables:
+  # REPLACE THESE WITH YOUR ACTUAL VALUES
+  dockerRegistryServiceConnection: 'GcrServiceConnection'
+  k8sServiceConnection: 'K8sServiceConnection' # Name of the Kubernetes service connection in Azure DevOps
+  
+  # Image Config
+  # GCR requires the format: project-id/image-name
+  imageRepositoryBackend: 'project-73bca58e-8d66-4aa9-be9/trading-bot-backend'
+  imageRepositoryFrontend: 'project-73bca58e-8d66-4aa9-be9/trading-bot-frontend'
+  dockerfilePathBackend: 'mock-backend/mock-backend/Dockerfile'
+  dockerfilePathFrontend: 'Dockerfile'
+  tag: '$(Build.BuildId)'
+  
+  # K8s Config
+  k8sNamespace: 'default'
+  imagePullSecret: 'acr-auth-secret'
+  vmImageName: 'ubuntu-latest'
+
+stages:
+- stage: Build
+  displayName: Build and Push Images
+  jobs:
+  - job: Build
+    displayName: Build
+    pool:
+      vmImage: $(vmImageName)
+    steps:
+    - task: Docker@2
+      displayName: Build and push Backend
+      inputs:
+        command: buildAndPush
+        repository: $(imageRepositoryBackend)
+        dockerfile: $(dockerfilePathBackend)
+        containerRegistry: $(dockerRegistryServiceConnection)
+        tags: |
+          $(tag)
+          latest
+
+    - task: Docker@2
+      displayName: Build and push Frontend
+      inputs:
+        command: buildAndPush
+        repository: $(imageRepositoryFrontend)
+        dockerfile: $(dockerfilePathFrontend)
+        containerRegistry: $(dockerRegistryServiceConnection)
+        buildContext: '.'
+        tags: |
+          $(tag)
+          latest
+
+    - task: PublishPipelineArtifact@1
+      inputs:
+        targetPath: 'deployment.yaml'
+        artifact: 'manifests'
+        publishLocation: 'pipeline'
+
+- stage: Deploy
+  displayName: Deploy to Kubernetes
+  dependsOn: Build
+  condition: and(succeeded(), ne(variables['Build.Reason'], 'PullRequest'))
+  jobs:
+  - job: WaitForValidation
+    displayName: Manual Approval
+    pool: server
+    timeoutInMinutes: 4320 # job times out in 3 days
+    steps:
+    - task: ManualValidation@0
+      inputs:
+        notifyUsers: |
+          admin@example.com
+        instructions: 'Please validate the build before deployment.'
+
+  - deployment: Deploy
+    displayName: Deploy
+    dependsOn: WaitForValidation
+    pool:
+      vmImage: $(vmImageName)
+    environment: 'production'
+    strategy:
+      runOnce:
+        deploy:
+          steps:
+          - task: KubernetesManifest@1
+            displayName: Create ImagePullSecret
+            inputs:
+              action: createSecret
+              kubernetesServiceConnection: $(k8sServiceConnection)
+              namespace: $(k8sNamespace)
+              secretType: dockerRegistry
+              secretName: $(imagePullSecret)
+              dockerRegistryEndpoint: $(dockerRegistryServiceConnection)
+
+          - task: KubernetesManifest@1
+            displayName: Deploy to Cluster
+            inputs:
+              action: deploy
+              kubernetesServiceConnection: $(k8sServiceConnection)
+              namespace: $(k8sNamespace)
+              manifests: |
+                $(Pipeline.Workspace)/manifests/deployment.yaml
+              containers: |
+                gcr.io/$(imageRepositoryBackend):$(tag)
+                gcr.io/$(imageRepositoryFrontend):$(tag)
+              imagePullSecrets: |
+                $(imagePullSecret)

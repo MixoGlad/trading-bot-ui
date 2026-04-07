@@ -1,0 +1,112 @@
+.auth-page {
+  display: flex;
+  min-height: 100vh;
+  width: 100vw;
+  overflow: hidden;
+  background-color: var(--bg-color, #121212);
+  color: var(--text-color, #ffffff);
+}
+
+.auth-side-visual {
+  flex: 1;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+  position: relative;
+  overflow: hidden;
+}
+
+.auth-form-container {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  padding: 2rem;
+  background-color: var(--bg-secondary, #1e1e1e);
+  max-width: 600px;
+  box-shadow: -5px 0 15px rgba(0, 0, 0, 0.3);
+  z-index: 10;
+}
+
+.auth-form-container h2 {
+  font-size: 2.5rem;
+  margin-bottom: 2rem;
+  color: var(--primary-color, #f7931a);
+}
+
+.btc-animated-icon {
+  width: 60%;
+  max-width: 400px;
+  height: auto;
+  animation: float 6s ease-in-out infinite;
+  filter: drop-shadow(0 0 20px rgba(247, 147, 26, 0.4));
+}
+
+.btc-path-fill {
+  fill: #f7931a;
+  animation: colorPulse 8s infinite alternate;
+}
+
+.btc-bg-circle {
+  fill: rgba(255, 255, 255, 0.05);
+  stroke: #f7931a;
+  stroke-width: 2;
+  stroke-dasharray: 20;
+  animation: spin 60s linear infinite;
+}
+
+@keyframes float {
+  0% {
+    transform: translateY(0px) scale(1);
+  }
+  50% {
+    transform: translateY(-20px) scale(1.02);
+  }
+  100% {
+    transform: translateY(0px) scale(1);
+  }
+}
+
+@keyframes colorPulse {
+  0% {
+    fill: #f7931a; /* Bitcoin Orange */
+    filter: drop-shadow(0 0 10px rgba(247, 147, 26, 0.6));
+  }
+  100% {
+    fill: #03a9f4; /* Light Blue */
+    filter: drop-shadow(0 0 15px rgba(3, 169, 244, 0.6));
+  }
+}
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .auth-page {
+    flex-direction: column;
+  }
+
+  .auth-side-visual {
+    flex: 0 0 200px; /* Fixed height header on mobile */
+    padding: 20px;
+  }
+
+  .btc-animated-icon {
+    height: 120px;
+    width: auto;
+  }
+
+  .auth-form-container {
+    max-width: 100%;
+    flex: 1;
+  }
+}

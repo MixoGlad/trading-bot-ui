@@ -1,0 +1,37 @@
+version: '3.8'
+
+services:
+  frontend:
+    # This service builds and runs your frontend application.
+    # It assumes the code is in a 'frontend' directory at the project root.
+    build:
+      context: ../../frontend
+      dockerfile: Dockerfile
+    container_name: trading-bot-frontend
+    ports:
+      - "5173:5173" # Maps the container's port 5173 to the host's port 5173
+    volumes:
+      - ../../frontend:/app # Mounts your local code for live-reloading
+      - /app/node_modules   # Prevents host node_modules from overwriting container's
+
+  backend:
+    build: .
+    container_name: trading-bot-backend
+    ports:
+      - "3001:3001"
+    environment:
+      - PORT=3001
+      - MONGO_URI=mongodb://mongo:27017/trading-bot/
+    depends_on:
+      - mongo
+
+  mongo:
+    image: mongo:6
+    container_name: trading-bot-mongo
+    ports:
+      - "27017:27017" # Exposed so you can connect via Compass/Shell from your host
+    volumes:
+      - mongo-data:/data/db
+
+volumes:
+  mongo-data:

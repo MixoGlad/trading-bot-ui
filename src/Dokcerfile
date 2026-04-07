@@ -1,0 +1,8 @@
+dockerfile:
+  from: node:lts-alpine
+  workdir: /app
+  copy_package: "package*.json ./"
+  run_install: "npm install"
+  copy_all: ". ."
+  expose: 5173
+  cmd: ["npm", "run", "dev", "--", "--host"]

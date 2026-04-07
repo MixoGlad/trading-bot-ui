@@ -1,0 +1,212 @@
+.auth-page {
+  display: flex;
+  min-height: 100vh;
+  width: 100vw;
+  overflow: hidden;
+  background-color: var(--bg-color, #121212);
+  color: var(--text-color, #ffffff);
+}
+
+.auth-side-visual {
+  flex: 1;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+  position: relative;
+  overflow: hidden;
+}
+
+.auth-form-container {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  padding: 2rem;
+  background-color: var(--bg-secondary, #1e1e1e);
+  max-width: 600px;
+  box-shadow: -5px 0 15px rgba(0, 0, 0, 0.3);
+  z-index: 10;
+}
+
+.auth-form-container h2 {
+  font-size: 2.5rem;
+  margin-bottom: 2rem;
+  color: var(--primary-color, #f7931a);
+}
+
+.btc-animated-icon {
+  width: 60%;
+  max-width: 400px;
+  height: auto;
+  animation: float 6s ease-in-out infinite;
+  filter: drop-shadow(0 0 20px rgba(247, 147, 26, 0.4));
+}
+
+.btc-path-fill {
+  fill: #f7931a;
+  animation: colorPulse 8s infinite alternate;
+}
+
+.btc-bg-circle {
+  fill: rgba(255, 255, 255, 0.05);
+  stroke: #f7931a;
+  stroke-width: 2;
+  stroke-dasharray: 20;
+  animation: spin 60s linear infinite;
+}
+
+@keyframes float {
+  0% {
+    transform: translateY(0px) scale(1);
+  }
+  50% {
+    transform: translateY(-20px) scale(1.02);
+  }
+  100% {
+    transform: translateY(0px) scale(1);
+  }
+}
+
+@keyframes colorPulse {
+  0% {
+    fill: #f7931a; /* Bitcoin Orange */
+    filter: drop-shadow(0 0 10px rgba(247, 147, 26, 0.6));
+  }
+  100% {
+    fill: #03a9f4; /* Light Blue */
+    filter: drop-shadow(0 0 15px rgba(3, 169, 244, 0.6));
+  }
+}
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .auth-page {
+    flex-direction: column;
+  }
+
+  .auth-side-visual {
+    flex: 0 0 200px; /* Fixed height header on mobile */
+    padding: 20px;
+  }
+
+  .btc-animated-icon {
+    height: 120px;
+    width: auto;
+  }
+
+  .auth-form-container {
+    max-width: 100%;
+    flex: 1;
+  }
+}
+
+.floating-icons {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.floating-icons span {
+  position: absolute;
+  display: block;
+  list-style: none;
+  font-size: 2rem;
+  /* You can change the color of the floating icons here.
+     I've changed it to a semi-transparent light blue to match the animation palette.
+     You can use any color, including CSS variables like var(--primary-color). */
+  color: rgba(3, 169, 244, 0.15);
+  animation: float-icons 25s linear infinite;
+  bottom: -150px;
+}
+
+.floating-icons span:nth-child(1) {
+  left: 25%;
+  animation-delay: 0s;
+  font-size: 2.5rem;
+}
+
+.floating-icons span:nth-child(2) {
+  left: 10%;
+  animation-delay: 2s;
+  animation-duration: 12s;
+  font-size: 1.5rem;
+}
+
+.floating-icons span:nth-child(3) {
+  left: 70%;
+  animation-delay: 4s;
+  font-size: 3rem;
+}
+
+.floating-icons span:nth-child(4) {
+  left: 40%;
+  animation-delay: 0s;
+  animation-duration: 18s;
+  font-size: 2rem;
+}
+
+.floating-icons span:nth-child(5) {
+  left: 65%;
+  animation-delay: 3s;
+  font-size: 1.8rem;
+}
+
+@keyframes float-icons {
+  0% {
+    transform: translateY(0) rotate(0deg);
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(-100vh) rotate(720deg);
+    opacity: 0;
+  }
+}
+}
+
+.guest-mode-banner {
+  background-color: var(--primary-color, #f7931a);
+  color: #121212;
+  text-align: center;
+  padding: 0.5rem;
+  font-size: 0.9rem;
+  font-weight: 500;
+}
+
+.guest-mode-banner a {
+  color: #000;
+  font-weight: 700;
+  text-decoration: underline;
+}
+
+.guest-mode-banner a:hover {
+  color: #16213e;
+}
+
+@keyframes flashGreen {
+  0% { color: #26a69a; text-shadow: 0 0 5px rgba(38, 166, 154, 0.5); }
+  100% { color: inherit; text-shadow: none; }
+}
+
+@keyframes flashRed {
+  0% { color: #ef5350; text-shadow: 0 0 5px rgba(239, 83, 80, 0.5); }
+  100% { color: inherit; text-shadow: none; }
+}
+
+.flash-up { animation: flashGreen 1s ease-out; }
+.flash-down { animation: flashRed 1s ease-out; }
+}

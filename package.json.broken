@@ -1,0 +1,66 @@
+{
+  "name": "trading-bot-ui",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "server": "nodemon mock-backend/mock-backend/server.cjs",
+    "dev:all": "concurrently \"npm run server\" \"npm run dev\"",
+    "lint": "eslint .",
+    "preview": "vite preview",
+    "format": "prettier --write \"src/**/*.{js,jsx,css,md}\""
+  },
+  "engines": {
+    "node": ">=22.0.0"
+  },
+  "dependencies": {
+    "axios": "^1.7.0",
+    "cors": "^2.8.6",
+    "d3-format": "^3.1.2",
+    "d3-shape": "^3.2.0",
+    "d3-time-format": "^4.1.0",
+    "express": "^5.2.1",
+    "html2canvas": "^1.4.1",
+    "jspdf": "^4.2.1",
+    "jspdf-autotable": "^5.0.7",
+    "qrcode.react": "^4.2.0",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "react-router-dom": "^7.13.1",
+    "recharts": "^2.15.0",
+    "update": "^0.7.4"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.39.1",
+    "@types/react": "^19.2.7",
+    "@types/react-dom": "^19.2.3",
+    "@vitejs/plugin-react": "^5.1.1",
+    "eslint": "^9.39.1",
+    "eslint-config-prettier": "^9.1.0",
+    "eslint-plugin-prettier": "^5.1.3",
+    "eslint-plugin-react-hooks": "^7.0.1",
+    "eslint-plugin-react-refresh": "^0.4.24",
+    "globals": "^16.5.0",
+    "nodemon": "^3.1.9",
+    "prettier": "^3.0.0",
+    "vite": "^8.0.0-beta.13"
+  },
+  "overrides": {
+    "vite": "^8.0.0-beta.13"
+  },
+  {
+  "name": "trading-bot",
+  "version": "1.0.0",
+  "dependencies": {
+    "react": "^18.2.0",
+    // Remove this line:
+    // "metaTrader5": "^1.0.0",
+    
+    // Instead, add if needed:
+    "axios": "^1.6.0",
+    "socket.io-client": "^4.5.0"
+  }
+}
+}
