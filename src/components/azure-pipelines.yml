@@ -1,111 +1,78 @@
-trigger:
-- main
+name: Deploy to Dev (GKE)
 
-resources:
-- repo: self
+on:
+  push:
+    branches: ['dev', 'main']
 
-variables:
-  # REPLACE THESE WITH YOUR ACTUAL VALUES
-  dockerRegistryServiceConnection: 'GcrServiceConnection'
-  k8sServiceConnection: 'K8sServiceConnection' # Name of the Kubernetes service connection in Azure DevOps
-  
-  # Image Config
-  # GCR requires the format: project-id/image-name
-  imageRepositoryBackend: 'project-73bca58e-8d66-4aa9-be9/trading-bot-backend'
-  imageRepositoryFrontend: 'project-73bca58e-8d66-4aa9-be9/trading-bot-frontend'
-  dockerfilePathBackend: 'mock-backend/mock-backend/Dockerfile'
-  dockerfilePathFrontend: 'Dockerfile'
-  tag: '$(Build.BuildId)'
-  
-  # K8s Config
-  k8sNamespace: 'default'
-  imagePullSecret: 'acr-auth-secret'
-  vmImageName: 'default'
+env:
+  PROJECT_ID: ${{ secrets.GCP_PROJECT_ID }}
+  GKE_CLUSTER: trading-bot-dev-cluster
+  GKE_ZONE: us-central1-a
+  BACKEND_IMAGE: trading-bot-backend
+  FRONTEND_IMAGE: trading-bot-frontend
 
-stages:
-- stage: Build
-  displayName: Build and Push Images
-  jobs:
-  - job: Build
-    displayName: Build
-    pool:
-      vmImage: $(vmImageName)
+jobs:
+  build-and-deploy:
+    name: Build, Publish, and Deploy
+    runs-on: ubuntu-latest
     steps:
-    - task: Docker@2
-      displayName: Build and push Backend
-      inputs:
-        command: buildAndPush
-        repository: $(imageRepositoryBackend)
-        dockerfile: $(dockerfilePathBackend)
-        containerRegistry: $(dockerRegistryServiceConnection)
-        tags: |
-          $(tag)
-          latest
+      - name: Checkout Code
+        uses: actions/checkout@v4
 
-    - task: Docker@2
-      displayName: Build and push Frontend
-      inputs:
-        command: buildAndPush
-        repository: $(imageRepositoryFrontend)
-        dockerfile: $(dockerfilePathFrontend)
-        containerRegistry: $(dockerRegistryServiceConnection)
-        buildContext: '.'
-        tags: |
-          $(tag)
-          latest
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
 
-    - task: PublishPipelineArtifact@1
-      inputs:
-        targetPath: 'deployment.yaml'
-        artifact: 'manifests'
-        publishLocation: 'pipeline'
+      - name: Install Dependencies & Lint
+        run: |-
+          npm install
+          npm run lint
 
-- stage: Deploy
-  displayName: Deploy to Kubernetes
-  dependsOn: Build
-  condition: and(succeeded(), ne(variables['Build.Reason'], 'PullRequest'))
-  jobs:
-  - job: WaitForValidation
-    displayName: Manual Approval
-    pool: server
-    timeoutInMinutes: 4320 # job times out in 3 days
-    steps:
-    - task: ManualValidation@0
-      inputs:
-        notifyUsers: |
-          admin@example.com
-        instructions: 'Please validate the build before deployment.'
+      # Authenticate with Google Cloud
+      - id: 'auth'
+        uses: 'google-github-actions/auth@v2'
+        with:
+          credentials_json: '${{ secrets.GCP_SA_KEY }}'
 
-  - deployment: Deploy
-    displayName: Deploy
-    dependsOn: WaitForValidation
-    pool:
-      vmImage: $(vmImageName)
-    environment: 'production'
-    strategy:
-      runOnce:
-        deploy:
-          steps:
-          - task: KubernetesManifest@1
-            displayName: Create ImagePullSecret
-            inputs:
-              action: createSecret
-              kubernetesServiceConnection: $(k8sServiceConnection)
-              namespace: $(k8sNamespace)
-              secretType: dockerRegistry
-              secretName: $(imagePullSecret)
-              dockerRegistryEndpoint: $(dockerRegistryServiceConnection)
+      - name: 'Set up Cloud SDK'
+        uses: 'google-github-actions/setup-gcloud@v2'
 
-          - task: KubernetesManifest@1
-            displayName: Deploy to Cluster
-            inputs:
-              action: deploy
-              kubernetesServiceConnection: $(k8sServiceConnection)
-              namespace: $(k8sNamespace)
-              manifests: |
-                $(Pipeline.Workspace)/manifests/deployment.yaml
-              containers: |
-                gcr.io/$(imageRepositoryBackend):$(tag)
-                gcr.io/$(imageRepositoryFrontend):$(tag)
-              imagePullSecrets: |
-                $(imagePullSecret)
+      - name: 'Get GKE Credentials'
+        uses: 'google-github-actions/get-gke-credentials@v2'
+        with:
+          cluster_name: ${{ env.GKE_CLUSTER }}
+          location: ${{ env.GKE_ZONE }}
+
+      - name: Configure Docker for GCR
+        run: |-
+          gcloud auth configure-docker
+
+      # Build and Push Backend
+      - name: Build Backend Image
+        run: |-
+          docker build \
+            --tag "gcr.io/$PROJECT_ID/$BACKEND_IMAGE:$GITHUB_SHA" \
+            ./mock-backend
+
+      - name: Publish Backend Image
+        run: docker push "gcr.io/$PROJECT_ID/$BACKEND_IMAGE:$GITHUB_SHA"
+
+      # Build and Push Frontend
+      - name: Build Frontend Image
+        run: |-
+          docker build \
+            --tag "gcr.io/$PROJECT_ID/$FRONTEND_IMAGE:$GITHUB_SHA" \
+            .
+
+      - name: Publish Frontend Image
+        run: docker push "gcr.io/$PROJECT_ID/$FRONTEND_IMAGE:$GITHUB_SHA"
+
+      # Deploy to GKE
+      - name: Deploy to Kubernetes
+        run: |-
+        kubectl set image deployment/trading-bot-backend backend=gcr.io/$PROJECT_ID/$BACKEND_IMAGE:$GITHUB_SHA
+        kubectl set image deployment/trading-bot-frontend frontend=gcr.io/$PROJECT_ID/$FRONTEND_IMAGE:$GITHUB_SHA
+        kubectl rollout status deployment/trading-bot-backend
+        kubectl rollout status deployment/trading-bot-frontend
